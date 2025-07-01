@@ -97,6 +97,13 @@
       background: #e8f5e9;
     }
 
+    .stack-vars {
+      font-size: 12px;
+      color: #555;
+      padding-left: 12px;
+      white-space: pre-wrap;
+    }
+
     /* Each code line */
     .code-line {
       padding: 2px 8px;
@@ -390,7 +397,26 @@
       callStack.forEach((frame, idx) => {
         const div = document.createElement("div");
         div.className = "stack-frame" + (idx === callStack.length - 1 ? " active" : "");
-        div.textContent = frame.function;
+        const nameDiv = document.createElement("div");
+        nameDiv.textContent = frame.function;
+        div.appendChild(nameDiv);
+
+        // Locals display
+        const varsDiv = document.createElement("div");
+        varsDiv.className = "stack-vars";
+        if (frame.locals) {
+          const parts = [];
+          for (const [varName, meta] of Object.entries(frame.locals)) {
+            let val;
+            if (meta.preview !== undefined) val = meta.preview;
+            else if (meta.value !== undefined) val = meta.value;
+            else val = "...";
+            parts.push(`${varName}: ${val}`);
+          }
+          varsDiv.textContent = parts.join("\n");
+        }
+        div.appendChild(varsDiv);
+
         stackPanel.appendChild(div);
       });
     }

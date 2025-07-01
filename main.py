@@ -6,8 +6,8 @@ import io
 import traceback
 import json
 import os
-from fastapi.responses import FileResponse  # type: ignore
-from fastapi.staticfiles import StaticFiles  # type: ignore
+from starlette.responses import FileResponse
+from starlette.staticfiles import StaticFiles
 import ast
 from typing import Any, Dict
 
