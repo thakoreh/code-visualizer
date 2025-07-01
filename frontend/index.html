@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Visualizer Pro - Interview Prep Edition</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fas fa-code"></i>
+                <h1>Code Visualizer Pro</h1>
+                <span class="subtitle">Interview Prep Edition</span>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="visualizer">
+                    <i class="fas fa-play-circle"></i>
+                    Visualizer
+                </button>
+                <button class="nav-btn" data-tab="problems">
+                    <i class="fas fa-tasks"></i>
+                    Problems
+                </button>
+                <button class="nav-btn" data-tab="complexity">
+                    <i class="fas fa-chart-line"></i>
+                    Complexity
+                </button>
+                <button class="nav-btn" data-tab="patterns">
+                    <i class="fas fa-puzzle-piece"></i>
+                    Patterns
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Visualizer Tab -->
+            <div class="tab-content active" id="visualizer-tab">
+                <div class="visualizer-layout">
+                    <!-- Code Editor Panel -->
+                    <div class="code-panel">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-code"></i> Code Editor</h3>
+                            <div class="editor-controls">
+                                <select id="template-selector" class="template-select">
+                                    <option value="">Choose template...</option>
+                                    <option value="array">Array Manipulation</option>
+                                    <option value="linkedlist">Linked List</option>
+                                    <option value="tree">Binary Tree</option>
+                                    <option value="graph">Graph Traversal</option>
+                                    <option value="dp">Dynamic Programming</option>
+                                    <option value="sorting">Sorting Algorithm</option>
+                                </select>
+                                <button id="run-btn" class="btn btn-primary">
+                                    <i class="fas fa-play"></i> Run
+                                </button>
+                            </div>
+                        </div>
+                        <div id="code-editor"></div>
+                    </div>
+
+                    <!-- Visualization Panel -->
+                    <div class="viz-panel">
+                        <!-- Execution Controls -->
+                        <div class="execution-controls">
+                            <button id="play-pause-btn" class="control-btn" disabled>
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button id="step-back-btn" class="control-btn" disabled>
+                                <i class="fas fa-step-backward"></i>
+                            </button>
+                            <button id="step-forward-btn" class="control-btn" disabled>
+                                <i class="fas fa-step-forward"></i>
+                            </button>
+                            <button id="restart-btn" class="control-btn" disabled>
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <input type="range" id="speed-slider" min="1" max="10" value="5" class="speed-slider">
+                            <span class="speed-label">Speed: <span id="speed-value">5</span></span>
+                        </div>
+
+                        <!-- Visualization Areas -->
+                        <div class="viz-grid">
+                            <!-- Current Line Highlight -->
+                            <div class="viz-section current-line-section">
+                                <h4><i class="fas fa-arrow-right"></i> Current Line</h4>
+                                <div id="current-line-display" class="current-line-display"></div>
+                            </div>
+
+                            <!-- Variables Visualization -->
+                            <div class="viz-section variables-section">
+                                <h4><i class="fas fa-database"></i> Variables</h4>
+                                <div id="variables-viz" class="variables-viz"></div>
+                            </div>
+
+                            <!-- Data Structure Visualization -->
+                            <div class="viz-section data-structure-section">
+                                <h4><i class="fas fa-project-diagram"></i> Data Structures</h4>
+                                <div id="data-structure-viz" class="data-structure-viz">
+                                    <canvas id="viz-canvas"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Call Stack -->
+                            <div class="viz-section call-stack-section">
+                                <h4><i class="fas fa-layer-group"></i> Call Stack</h4>
+                                <div id="call-stack-viz" class="call-stack-viz"></div>
+                            </div>
+                        </div>
+
+                        <!-- Output Console -->
+                        <div class="output-section">
+                            <div class="output-tabs">
+                                <button class="output-tab active" data-output="stdout">
+                                    <i class="fas fa-terminal"></i> Output
+                                </button>
+                                <button class="output-tab" data-output="stderr">
+                                    <i class="fas fa-exclamation-triangle"></i> Errors
+                                </button>
+                                <button class="output-tab" data-output="results">
+                                    <i class="fas fa-check-circle"></i> Results
+                                </button>
+                            </div>
+                            <div class="output-content">
+                                <pre id="stdout-content" class="output-panel active"></pre>
+                                <pre id="stderr-content" class="output-panel"></pre>
+                                <div id="results-content" class="output-panel results-panel"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Problems Tab -->
+            <div class="tab-content" id="problems-tab">
+                <div class="problems-container">
+                    <h2>Coding Interview Problems</h2>
+                    <div class="problem-categories">
+                        <div class="category-card" data-category="arrays">
+                            <i class="fas fa-list"></i>
+                            <h3>Arrays & Strings</h3>
+                            <p>Two pointers, sliding window, and more</p>
+                        </div>
+                        <div class="category-card" data-category="linkedlists">
+                            <i class="fas fa-link"></i>
+                            <h3>Linked Lists</h3>
+                            <p>Reversal, cycle detection, merging</p>
+                        </div>
+                        <div class="category-card" data-category="trees">
+                            <i class="fas fa-tree"></i>
+                            <h3>Trees & Graphs</h3>
+                            <p>Traversals, BST, graph algorithms</p>
+                        </div>
+                        <div class="category-card" data-category="dp">
+                            <i class="fas fa-coins"></i>
+                            <h3>Dynamic Programming</h3>
+                            <p>Memoization, tabulation patterns</p>
+                        </div>
+                    </div>
+                    <div id="problem-list" class="problem-list"></div>
+                </div>
+            </div>
+
+            <!-- Complexity Tab -->
+            <div class="tab-content" id="complexity-tab">
+                <div class="complexity-container">
+                    <h2>Time & Space Complexity Analyzer</h2>
+                    <div class="complexity-analysis">
+                        <div class="complexity-result">
+                            <h3>Time Complexity</h3>
+                            <div id="time-complexity" class="complexity-display">
+                                <span class="complexity-value">-</span>
+                                <canvas id="time-complexity-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="complexity-result">
+                            <h3>Space Complexity</h3>
+                            <div id="space-complexity" class="complexity-display">
+                                <span class="complexity-value">-</span>
+                                <canvas id="space-complexity-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="complexity-explanation">
+                        <h3>Analysis Details</h3>
+                        <div id="complexity-details"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patterns Tab -->
+            <div class="tab-content" id="patterns-tab">
+                <div class="patterns-container">
+                    <h2>Algorithm Patterns Library</h2>
+                    <div class="patterns-grid">
+                        <div class="pattern-card">
+                            <h3>Two Pointers</h3>
+                            <p>Used for array/string problems</p>
+                            <button class="btn btn-secondary load-pattern" data-pattern="two-pointers">
+                                <i class="fas fa-code"></i> Load Example
+                            </button>
+                        </div>
+                        <div class="pattern-card">
+                            <h3>Sliding Window</h3>
+                            <p>Subarray/substring problems</p>
+                            <button class="btn btn-secondary load-pattern" data-pattern="sliding-window">
+                                <i class="fas fa-code"></i> Load Example
+                            </button>
+                        </div>
+                        <div class="pattern-card">
+                            <h3>Fast & Slow Pointers</h3>
+                            <p>Cycle detection in linked lists</p>
+                            <button class="btn btn-secondary load-pattern" data-pattern="fast-slow">
+                                <i class="fas fa-code"></i> Load Example
+                            </button>
+                        </div>
+                        <div class="pattern-card">
+                            <h3>Tree Traversal</h3>
+                            <p>DFS and BFS patterns</p>
+                            <button class="btn btn-secondary load-pattern" data-pattern="tree-traversal">
+                                <i class="fas fa-code"></i> Load Example
+                            </button>
+                        </div>
+                        <div class="pattern-card">
+                            <h3>Binary Search</h3>
+                            <p>Search in sorted arrays</p>
+                            <button class="btn btn-secondary load-pattern" data-pattern="binary-search">
+                                <i class="fas fa-code"></i> Load Example
+                            </button>
+                        </div>
+                        <div class="pattern-card">
+                            <h3>Backtracking</h3>
+                            <p>Permutations, combinations</p>
+                            <button class="btn btn-secondary load-pattern" data-pattern="backtracking">
+                                <i class="fas fa-code"></i> Load Example
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loader"></div>
+            <p>Executing code...</p>
+        </div>
+
+        <!-- Tutorial Overlay -->
+        <div id="tutorial-overlay" class="tutorial-overlay">
+            <div class="tutorial-content">
+                <h2>Welcome to Code Visualizer Pro!</h2>
+                <p>This tool helps you understand code execution step-by-step.</p>
+                <ul>
+                    <li><strong>Write code</strong> in the editor or choose a template</li>
+                    <li><strong>Click Run</strong> to execute and visualize</li>
+                    <li><strong>Use controls</strong> to step through execution</li>
+                    <li><strong>Watch variables</strong> change in real-time</li>
+                </ul>
+                <button class="btn btn-primary" onclick="closeTutorial()">Get Started</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="interview-prep.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
