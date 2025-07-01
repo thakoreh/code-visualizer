@@ -22,6 +22,7 @@
       display: flex;
       justify-content: center;
       position: relative;
+      gap: 1rem;
     }
 
     main {
@@ -199,12 +200,53 @@
       opacity: 0.25;
       transition: opacity 0.3s ease;
     }
+
+    #timer {
+      font-family: monospace;
+      background: #444;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    #hint-btn, #interview-btn {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #555;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    #hints-panel {
+      position: absolute;
+      top: 100%;
+      right: 1rem;
+      width: 250px;
+      background: #fff;
+      color: #000;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 10;
+    }
+
+    #hints-panel p {
+      margin: 0 0 6px 0;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Code Visualizer</h1>
     <div id="complexity-meter" title="Estimated time complexity"></div>
+    <span id="timer"></span>
+    <button id="interview-btn">Start Interview Mode</button>
+    <button id="hint-btn" style="display:none;">Hint 💡</button>
+    <div id="hints-panel"></div>
   </header>
   <main>
     <section id="editor">
@@ -235,6 +277,16 @@
     let playbackInterval;
     let prevVars = {};
     const varPositions = {}; // map varName -> {el, line}
+
+    // Interview Mode
+    let interviewMode = false;
+    let countdown = 0;
+    let timerInterval = null;
+    const timerEl = document.getElementById("timer");
+    const interviewBtn = document.getElementById("interview-btn");
+    const hintBtn = document.getElementById("hint-btn");
+    const hintsPanel = document.getElementById("hints-panel");
+    let currentHints = [];
 
     runBtn.addEventListener("click", async () => {
       const code = codeInput.value;
@@ -272,6 +324,10 @@
         const complexity = await compRes.json();
 
         updateComplexityMeter(complexity);
+
+        if (interviewMode && complexity.suggestions) {
+          currentHints = [...complexity.suggestions];
+        }
 
         if (data.stderr) {
           console.error(data.stderr);
@@ -515,6 +571,54 @@
     function getIndent(text) {
       const match = text.match(/^\s*/);
       return match ? match[0].length : 0;
+    }
+
+    interviewBtn.addEventListener("click", () => {
+      if (interviewMode) return;
+      interviewMode = true;
+      countdown = 15 * 60; // 15 minutes
+      interviewBtn.style.display = "none";
+      hintBtn.style.display = "inline-block";
+      startTimer();
+    });
+
+    hintBtn.addEventListener("click", () => {
+      if (!interviewMode) return;
+      if (hintsPanel.style.display === "none" || hintsPanel.style.display === "") {
+        renderNextHint();
+        hintsPanel.style.display = "block";
+      } else {
+        hintsPanel.style.display = "none";
+      }
+    });
+
+    function startTimer() {
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        countdown -= 1;
+        if (countdown <= 0) {
+          clearInterval(timerInterval);
+          timerEl.textContent = "Time's up!";
+          timerEl.style.background = "#dc3545";
+        } else {
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const mins = String(Math.floor(countdown / 60)).padStart(2, "0");
+      const secs = String(countdown % 60).padStart(2, "0");
+      timerEl.textContent = `${mins}:${secs}`;
+    }
+
+    function renderNextHint() {
+      if (currentHints.length === 0) {
+        hintsPanel.innerHTML = "<p>No more hints available.</p>";
+        return;
+      }
+      const hint = currentHints.shift();
+      hintsPanel.innerHTML = `<p>${hint}</p>`;
     }
   </script>
 </body>
