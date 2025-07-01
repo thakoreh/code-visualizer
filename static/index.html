@@ -124,10 +124,12 @@
     }
 
     /* Pulsing glow for active line */
-    .active-line {
+    .code-line.active-line {
       background: #e0f3ff;
       animation: pulseGlow 1s ease-in-out infinite;
       border-radius: 4px;
+      transform: scale(1.02);
+      transform-origin: left center;
     }
 
     /* Variable chips */
@@ -191,6 +193,11 @@
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 14px;
+    }
+
+    .code-line.dimmed {
+      opacity: 0.25;
+      transition: opacity 0.3s ease;
     }
   </style>
 </head>
@@ -346,6 +353,9 @@
 
             // Draw data-flow arrows from last definition to this usage
             drawDataFlowArrows(el, currVars);
+
+            // Apply adaptive zoom based on indentation scope
+            applyAdaptiveZoom(el);
           }
         }
 
@@ -488,6 +498,24 @@
       defs.appendChild(marker);
       svg.appendChild(defs);
     })();
+
+    function applyAdaptiveZoom(activeEl) {
+      const activeIndent = getIndent(activeEl.textContent);
+      const allLines = player.querySelectorAll('.code-line');
+      allLines.forEach((lineEl) => {
+        const indent = getIndent(lineEl.textContent);
+        if (activeIndent >= 4 && indent < activeIndent) {
+          lineEl.classList.add('dimmed');
+        } else {
+          lineEl.classList.remove('dimmed');
+        }
+      });
+    }
+
+    function getIndent(text) {
+      const match = text.match(/^\s*/);
+      return match ? match[0].length : 0;
+    }
   </script>
 </body>
 </html>
