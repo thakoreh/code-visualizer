@@ -59,14 +59,42 @@
     }
 
     /* Right side: Code playback */
-    #player {
+    #vis {
       width: 60%;
+      display: flex;
+    }
+
+    #player {
+      flex: 1;
       position: relative;
       overflow-y: auto;
       padding: 1rem;
       background: #f7f7f7;
       font-family: "Fira Code", monospace;
       counter-reset: line;
+    }
+
+    /* Call stack panel */
+    #stack {
+      width: 220px;
+      border-left: 1px solid #ddd;
+      background: #ffffff;
+      overflow-y: auto;
+      font-family: "Fira Code", monospace;
+      padding: 0.5rem 0;
+    }
+
+    .stack-frame {
+      padding: 6px 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .stack-frame:last-child {
+      border-bottom: none;
+    }
+
+    .stack-frame.active {
+      background: #e8f5e9;
     }
 
     /* Each code line */
@@ -171,8 +199,13 @@
       <button id="run-btn">Run ▶️</button>
     </section>
 
-    <section id="player">
-      <!-- Lines will be injected here -->
+    <section id="vis">
+      <div id="player">
+        <!-- Lines will be injected here -->
+      </div>
+      <div id="stack">
+        <!-- Stack frames will be injected here -->
+      </div>
     </section>
   </main>
 
@@ -180,6 +213,7 @@
     const runBtn = document.getElementById("run-btn");
     const codeInput = document.getElementById("code-input");
     const player = document.getElementById("player");
+    const stackPanel = document.getElementById("stack");
 
     let playbackInterval;
     let prevVars = {};
@@ -296,6 +330,9 @@
           prevVars = currVars;
         }
 
+        // Update call stack panel
+        updateCallStack(stepData.call_stack);
+
         step++;
       }, 700); // adjust speed as needed
     }
@@ -338,6 +375,24 @@
       if (suggestions && suggestions.length) {
         meter.title = suggestions.join("\n");
       }
+    }
+
+    function updateCallStack(callStack) {
+      if (!stackPanel) return;
+      stackPanel.innerHTML = "";
+      if (!callStack || callStack.length === 0) {
+        const empty = document.createElement("div");
+        empty.textContent = "<global>";
+        empty.className = "stack-frame active";
+        stackPanel.appendChild(empty);
+        return;
+      }
+      callStack.forEach((frame, idx) => {
+        const div = document.createElement("div");
+        div.className = "stack-frame" + (idx === callStack.length - 1 ? " active" : "");
+        div.textContent = frame.function;
+        stackPanel.appendChild(div);
+      });
     }
   </script>
 </body>
