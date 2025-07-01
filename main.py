@@ -10,11 +10,11 @@ import traceback
 from typing import Any, Dict
 
 # Third-party imports
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from starlette.responses import FileResponse
-from starlette.staticfiles import StaticFiles
+from fastapi import FastAPI  # type: ignore
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+from pydantic import BaseModel  # type: ignore
+from starlette.responses import FileResponse  # type: ignore
+from starlette.staticfiles import StaticFiles  # type: ignore
 
 app = FastAPI()
 
