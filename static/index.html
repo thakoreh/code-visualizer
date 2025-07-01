@@ -62,6 +62,7 @@
     #vis {
       width: 60%;
       display: flex;
+      position: relative;
     }
 
     #player {
@@ -213,6 +214,8 @@
       <div id="stack">
         <!-- Stack frames will be injected here -->
       </div>
+      <!-- SVG overlay for data-flow arrows -->
+      <svg id="flow-svg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></svg>
     </section>
   </main>
 
@@ -224,6 +227,7 @@
 
     let playbackInterval;
     let prevVars = {};
+    const varPositions = {}; // map varName -> {el, line}
 
     runBtn.addEventListener("click", async () => {
       const code = codeInput.value;
@@ -333,8 +337,16 @@
           }
           if (Object.keys(diff).length) {
             showVarChips(el, diff);
+            prevVars = currVars;
+
+            // Record variable positions for diff vars (definitions)
+            for (const varName of Object.keys(diff)) {
+              varPositions[varName] = { el, line };
+            }
+
+            // Draw data-flow arrows from last definition to this usage
+            drawDataFlowArrows(el, currVars);
           }
-          prevVars = currVars;
         }
 
         // Update call stack panel
@@ -420,6 +432,62 @@
         stackPanel.appendChild(div);
       });
     }
+
+    function drawDataFlowArrows(currentEl, currVars) {
+      const svg = document.getElementById("flow-svg");
+      if (!svg) return;
+      // Clear previous arrows
+      svg.innerHTML = "";
+
+      const playerRect = player.getBoundingClientRect();
+
+      for (const varName of Object.keys(currVars)) {
+        const recorded = varPositions[varName];
+        if (!recorded || recorded.el === currentEl) continue;
+
+        // Compute positions
+        const srcRect = recorded.el.getBoundingClientRect();
+        const dstRect = currentEl.getBoundingClientRect();
+
+        const x1 = srcRect.left - playerRect.left;
+        const y1 = srcRect.top - playerRect.top + srcRect.height / 2;
+        const x2 = dstRect.left - playerRect.left;
+        const y2 = dstRect.top - playerRect.top + dstRect.height / 2;
+
+        // Create line with marker arrowhead
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x1 + 4); // offset from gutter
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2 + 4);
+        line.setAttribute("y2", y2);
+        line.setAttribute("stroke", "#888");
+        line.setAttribute("stroke-width", "2");
+        line.setAttribute("marker-end", "url(#arrowhead)");
+        line.style.strokeDasharray = "4 2";
+        svg.appendChild(line);
+      }
+    }
+
+    // Append marker definition once
+    (function setupArrowDef() {
+      const svg = document.getElementById("flow-svg");
+      if (!svg) return;
+      const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+      marker.setAttribute("id", "arrowhead");
+      marker.setAttribute("markerWidth", "6");
+      marker.setAttribute("markerHeight", "6");
+      marker.setAttribute("refX", "5");
+      marker.setAttribute("refY", "3");
+      marker.setAttribute("orient", "auto");
+      marker.setAttribute("markerUnits", "strokeWidth");
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", "M0,0 L6,3 L0,6 Z");
+      path.setAttribute("fill", "#888");
+      marker.appendChild(path);
+      defs.appendChild(marker);
+      svg.appendChild(defs);
+    })();
   </script>
 </body>
 </html>

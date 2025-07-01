@@ -1,15 +1,20 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import sys
+"""Backend API for Code Visualizer with tracing and complexity analysis."""
+
+# Standard library imports
+import ast
 import io
-import traceback
 import json
 import os
+import sys
+import traceback
+from typing import Any, Dict
+
+# Third-party imports
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
-import ast
-from typing import Any, Dict
 
 app = FastAPI()
 
