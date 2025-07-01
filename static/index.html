@@ -19,6 +19,9 @@
       background: #222;
       color: #fff;
       text-align: center;
+      display: flex;
+      justify-content: center;
+      position: relative;
     }
 
     main {
@@ -141,11 +144,24 @@
     .code-line {
       position: relative;
     }
+
+    #complexity-meter {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #333;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Code Visualizer</h1>
+    <div id="complexity-meter" title="Estimated time complexity"></div>
   </header>
   <main>
     <section id="editor">
@@ -185,14 +201,26 @@
         player.appendChild(div);
       });
 
-      // Fetch trace from backend
+      // Fetch trace and complexity concurrently from backend
       try {
-        const res = await fetch("/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
-        });
-        const data = await res.json();
+        const [traceRes, compRes] = await Promise.all([
+          fetch("/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code }),
+          }),
+          fetch("/complexity", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code }),
+          }),
+        ]);
+
+        const data = await traceRes.json();
+        const complexity = await compRes.json();
+
+        updateComplexityMeter(complexity);
+
         if (data.stderr) {
           console.error(data.stderr);
         }
@@ -292,6 +320,24 @@
           div.style.boxShadow = "";
         }
       });
+    }
+
+    function updateComplexityMeter({ big_o, suggestions }) {
+      const meter = document.getElementById("complexity-meter");
+      if (!meter) return;
+      meter.textContent = big_o;
+
+      // Color based on complexity
+      let color;
+      if (big_o.startsWith("O(1)")) color = "#28a745"; // green
+      else if (big_o.startsWith("O(N)")) color = "#ffc107"; // yellow
+      else if (big_o.startsWith("O(N^2)")) color = "#fd7e14"; // orange
+      else color = "#dc3545"; // red
+      meter.style.background = color;
+
+      if (suggestions && suggestions.length) {
+        meter.title = suggestions.join("\n");
+      }
     }
   </script>
 </body>

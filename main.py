@@ -8,6 +8,8 @@ import json
 import os
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+import ast
+from typing import Any, Dict
 
 app = FastAPI()
 
@@ -169,6 +171,111 @@ def health():
 @app.get("/ui", include_in_schema=False)
 def serve_ui():
     return FileResponse("static/index.html")
+
+# ---------------------------------------------------------------------------
+# Complexity analysis helpers
+# ---------------------------------------------------------------------------
+
+class ComplexityVisitor(ast.NodeVisitor):
+    """Very rough heuristic estimator for time complexity.
+    Counts nested loops and detects simple recursion. Assumes that each non-constant
+    loop iterates proportional to N. The maximum nested loop depth ≈ exponent.
+    """
+    def __init__(self):
+        self.current_loop_depth = 0
+        self.max_loop_depth = 0
+        self.recursive_funcs = set()
+        self.func_stack = []  # track current function names
+
+    # Helper to determine if iterator is constant sized (only handles range(int_literal))
+    def _is_constant_iter(self, node: ast.AST) -> bool:
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'range':
+            # If all args are numeric constants
+            return all(isinstance(arg, ast.Constant) for arg in node.args)
+        return False
+
+    def generic_visit(self, node: ast.AST):
+        super().generic_visit(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef):
+        self.func_stack.append(node.name)
+        self.generic_visit(node)
+        self.func_stack.pop()
+
+    def visit_Call(self, node: ast.Call):
+        # Detect recursion: call with same name as current function
+        if self.func_stack and isinstance(node.func, ast.Name):
+            curr_fn = self.func_stack[-1]
+            if node.func.id == curr_fn:
+                self.recursive_funcs.add(curr_fn)
+        self.generic_visit(node)
+
+    def _enter_loop(self, node: ast.AST):
+        non_constant = True
+        if isinstance(node, ast.For):
+            non_constant = not self._is_constant_iter(node.iter)
+        # While loops considered non-constant
+        if non_constant:
+            self.current_loop_depth += 1
+            if self.current_loop_depth > self.max_loop_depth:
+                self.max_loop_depth = self.current_loop_depth
+        # Visit body
+        for child in getattr(node, 'body', []):
+            self.visit(child)
+        # else block also counts
+        for child in getattr(node, 'orelse', []):
+            self.visit(child)
+        # Exit
+        if non_constant:
+            self.current_loop_depth -= 1
+
+    def visit_For(self, node: ast.For):
+        self._enter_loop(node)
+        # Don't call generic_visit as we've already visited body
+
+    def visit_While(self, node: ast.While):
+        self._enter_loop(node)
+
+
+def estimate_big_o(code: str) -> Dict[str, Any]:
+    """Return dict with 'big_o' and 'suggestions'"""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return {"big_o": "Unknown", "suggestions": ["Unable to parse code."]}
+
+    visitor = ComplexityVisitor()
+    visitor.visit(tree)
+
+    if visitor.recursive_funcs:
+        big_o = "O(N) (recursive)"
+        suggestions = [
+            "Consider adding memoization or converting recursion to iterative.",
+        ]
+    else:
+        depth = visitor.max_loop_depth
+        if depth == 0:
+            big_o = "O(1)"
+            suggestions = ["Excellent! Constant time operations detected."]
+        elif depth == 1:
+            big_o = "O(N)"
+            suggestions = ["Consider whether the loop can be reduced or optimized with built-in functions."]
+        elif depth == 2:
+            big_o = "O(N^2)"
+            suggestions = ["Nested loops detected; investigate opportunities to avoid inner loop (hash map, sorting, etc.)."]
+        elif depth == 3:
+            big_o = "O(N^3)"
+            suggestions = ["Triple nested loops highly inefficient; consider refactoring."]
+        else:
+            big_o = f"O(N^{depth})"
+            suggestions = ["Deeply nested loops; unlikely efficient for large inputs."]
+    return {"big_o": big_o, "suggestions": suggestions}
+
+
+@app.post("/complexity")
+def complexity(req: CodeRequest):
+    result = estimate_big_o(req.code)
+    return result
 
 if __name__ == "__main__":
     import uvicorn
