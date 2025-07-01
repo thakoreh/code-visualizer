@@ -136,6 +136,11 @@
         box-shadow: 0 0 0px rgba(0, 123, 255, 0.8);
       }
     }
+
+    /* Ensure heatmap border is visible even on active line */
+    .code-line {
+      position: relative;
+    }
   </style>
 </head>
 <body>
@@ -191,6 +196,10 @@
         if (data.stderr) {
           console.error(data.stderr);
         }
+
+        // Apply heatmap visualization based on execution frequency
+        applyHeatmap(data.trace);
+
         startPlayback(data.trace);
       } catch (err) {
         console.error("Error:", err);
@@ -261,6 +270,28 @@
 
         step++;
       }, 700); // adjust speed as needed
+    }
+
+    function applyHeatmap(trace) {
+      const freq = {};
+      let max = 0;
+      trace.forEach(({ line }) => {
+        freq[line] = (freq[line] || 0) + 1;
+        if (freq[line] > max) max = freq[line];
+      });
+
+      player.querySelectorAll(".code-line").forEach((div) => {
+        const lineNo = parseInt(div.dataset.lineno, 10);
+        const count = freq[lineNo] || 0;
+        if (count > 0 && max > 0) {
+          const intensity = count / max; // 0..1
+          const hue = 240 - 240 * intensity; // blue (240) -> red (0)
+          const color = `hsl(${hue}, 100%, 60%)`;
+          div.style.boxShadow = `inset 4px 0 0 0 ${color}`;
+        } else {
+          div.style.boxShadow = "";
+        }
+      });
     }
   </script>
 </body>
