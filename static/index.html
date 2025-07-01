@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Visualizer</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      padding: 1rem;
+      background: #222;
+      color: #fff;
+      text-align: center;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Left side: Code input */
+    #editor {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #ddd;
+    }
+
+    #code-input {
+      flex: 1;
+      width: 100%;
+      font-family: "Fira Code", monospace;
+      font-size: 15px;
+      padding: 1rem;
+      border: none;
+      resize: none;
+      outline: none;
+    }
+
+    #run-btn {
+      padding: 0.8rem;
+      cursor: pointer;
+      border: none;
+      background: #007bff;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    /* Right side: Code playback */
+    #player {
+      width: 60%;
+      position: relative;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #f7f7f7;
+      font-family: "Fira Code", monospace;
+      counter-reset: line;
+    }
+
+    /* Each code line */
+    .code-line {
+      padding: 2px 8px;
+      white-space: pre;
+      position: relative;
+    }
+
+    /* Add gutter with line numbers */
+    .code-line::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 2.5em;
+      margin-right: 0.75em;
+      text-align: right;
+      color: #888;
+    }
+
+    /* Pulsing glow for active line */
+    .active-line {
+      background: #e0f3ff;
+      animation: pulseGlow 1s ease-in-out infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        box-shadow: 0 0 0px rgba(0, 123, 255, 0.8);
+      }
+      50% {
+        box-shadow: 0 0 10px 4px rgba(0, 123, 255, 0.5);
+      }
+      100% {
+        box-shadow: 0 0 0px rgba(0, 123, 255, 0.8);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Code Visualizer</h1>
+  </header>
+  <main>
+    <section id="editor">
+      <textarea id="code-input" spellcheck="false" placeholder="Write Python code here...">for i in range(5):
+    print(i)
+</textarea>
+      <button id="run-btn">Run ▶️</button>
+    </section>
+
+    <section id="player">
+      <!-- Lines will be injected here -->
+    </section>
+  </main>
+
+  <script>
+    const runBtn = document.getElementById("run-btn");
+    const codeInput = document.getElementById("code-input");
+    const player = document.getElementById("player");
+
+    let playbackInterval;
+
+    runBtn.addEventListener("click", async () => {
+      const code = codeInput.value;
+
+      // Stop previous playback if running
+      if (playbackInterval) clearInterval(playbackInterval);
+      player.innerHTML = "";
+
+      // Show code in the player with distinct line elements
+      const lines = code.split("\n");
+      lines.forEach((content, idx) => {
+        const div = document.createElement("div");
+        div.textContent = content === "" ? " " : content; // keep empty lines height
+        div.className = "code-line";
+        div.dataset.lineno = idx + 1;
+        player.appendChild(div);
+      });
+
+      // Fetch trace from backend
+      try {
+        const res = await fetch("/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        const data = await res.json();
+        if (data.stderr) {
+          console.error(data.stderr);
+        }
+        startPlayback(data.trace);
+      } catch (err) {
+        console.error("Error:", err);
+      }
+    });
+
+    function startPlayback(trace) {
+      let step = 0;
+      if (!trace || trace.length === 0) return;
+
+      playbackInterval = setInterval(() => {
+        const prevActive = document.querySelector(".active-line");
+        if (prevActive) prevActive.classList.remove("active-line");
+
+        if (step >= trace.length) {
+          clearInterval(playbackInterval);
+          return;
+        }
+
+        const { line } = trace[step];
+        const el = player.querySelector(`.code-line[data-lineno='${line}']`);
+        if (el) {
+          el.classList.add("active-line");
+          // Smooth scroll to center
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        step++;
+      }, 700); // adjust speed as needed
+    }
+  </script>
+</body>
+</html>

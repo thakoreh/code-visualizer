@@ -6,6 +6,8 @@ import io
 import traceback
 import json
 import os
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
@@ -17,6 +19,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount the static directory so that the frontend (index.html, css, js) can be served directly.
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class CodeRequest(BaseModel):
     code: str
@@ -143,6 +148,16 @@ def health_check():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+# ---------------------------------------------------------------------------
+# UI ROUTES
+# ---------------------------------------------------------------------------
+
+# Serve the simple frontend UI for the code visualizer. This implements the
+# pulsing‐glow highlight and smooth-scroll quick-wins.
+@app.get("/ui", include_in_schema=False)
+def serve_ui():
+    return FileResponse("static/index.html")
 
 if __name__ == "__main__":
     import uvicorn
