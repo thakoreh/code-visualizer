@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Visualizer - Interactive Python Execution</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-code"></i> Code Visualizer</h1>
+                <p>Understand your code execution with interactive visualization</p>
+            </div>
+            <div class="header-controls">
+                <button id="toggleTheme" class="btn btn-secondary">
+                    <i class="fas fa-moon"></i> Dark Mode
+                </button>
+                <button id="interviewMode" class="btn btn-primary">
+                    <i class="fas fa-briefcase"></i> Interview Mode
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Code Input Section -->
+            <div class="code-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-edit"></i> Code Editor</h2>
+                    <div class="editor-controls">
+                        <button id="runCode" class="btn btn-success">
+                            <i class="fas fa-play"></i> Run Code
+                        </button>
+                        <button id="clearCode" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                        <button id="loadExample" class="btn btn-info">
+                            <i class="fas fa-file-code"></i> Load Example
+                        </button>
+                    </div>
+                </div>
+                <div class="code-editor-container">
+                    <textarea id="codeInput" placeholder="Enter your Python code here...">
+# Example: Bubble Sort Algorithm
+def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+
+# Test the algorithm
+numbers = [64, 34, 25, 12, 22, 11, 90]
+print("Original array:", numbers)
+sorted_numbers = bubble_sort(numbers.copy())
+print("Sorted array:", sorted_numbers)
+                    </textarea>
+                </div>
+            </div>
+
+            <!-- Visualization Section -->
+            <div class="visualization-section">
+                <div class="viz-header">
+                    <h2><i class="fas fa-eye"></i> Execution Visualization</h2>
+                    <div class="playback-controls">
+                        <button id="stepBack" class="btn btn-sm" disabled>
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button id="playPause" class="btn btn-sm btn-primary">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button id="stepForward" class="btn btn-sm" disabled>
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                        <div class="speed-control">
+                            <label>Speed:</label>
+                            <input type="range" id="speedSlider" min="100" max="2000" value="800" step="100">
+                            <span id="speedDisplay">0.8s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Display with Line Highlighting -->
+                <div class="code-display-container">
+                    <div class="code-display" id="codeDisplay">
+                        <pre><code class="language-python" id="highlightedCode"></code></pre>
+                        <div class="execution-pointer" id="executionPointer">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Information -->
+                <div class="step-info">
+                    <div class="step-counter">
+                        Step: <span id="currentStep">0</span> / <span id="totalSteps">0</span>
+                    </div>
+                    <div class="execution-time">
+                        Time: <span id="executionTime">0.00s</span>
+                    </div>
+                    <div class="current-line">
+                        Line: <span id="currentLine">N/A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Panels -->
+        <div class="bottom-panels">
+            <!-- Variables Panel -->
+            <div class="panel variables-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-database"></i> Variables</h3>
+                    <button class="panel-toggle" data-panel="variables">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="panel-content" id="variablesContent">
+                    <div class="no-data">No variables to display</div>
+                </div>
+            </div>
+
+            <!-- Memory Heap Panel -->
+            <div class="panel heap-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-memory"></i> Memory Heap</h3>
+                    <button class="panel-toggle" data-panel="heap">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="panel-content" id="heapContent">
+                    <div class="no-data">No heap objects to display</div>
+                </div>
+            </div>
+
+            <!-- Call Stack Panel -->
+            <div class="panel stack-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-layer-group"></i> Call Stack</h3>
+                    <button class="panel-toggle" data-panel="stack">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="panel-content" id="stackContent">
+                    <div class="no-data">No call stack to display</div>
+                </div>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="panel output-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-terminal"></i> Output</h3>
+                    <button class="panel-toggle" data-panel="output">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="panel-content" id="outputContent">
+                    <div class="no-data">No output</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interview Mode Panel -->
+        <div class="interview-panel" id="interviewPanel" style="display: none;">
+            <div class="panel-header">
+                <h3><i class="fas fa-briefcase"></i> Interview Preparation</h3>
+                <button id="closeInterview" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="interview-content">
+                <!-- Complexity Analysis -->
+                <div class="analysis-section">
+                    <h4><i class="fas fa-chart-line"></i> Complexity Analysis</h4>
+                    <div class="complexity-metrics" id="complexityMetrics">
+                        <div class="metric">
+                            <span class="metric-label">Cyclomatic Complexity:</span>
+                            <span class="metric-value" id="cyclomaticComplexity">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Nesting Depth:</span>
+                            <span class="metric-value" id="nestingDepth">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Code Quality Score:</span>
+                            <span class="metric-value" id="qualityScore">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Insights -->
+                <div class="analysis-section">
+                    <h4><i class="fas fa-tachometer-alt"></i> Performance Insights</h4>
+                    <div id="performanceInsights">
+                        <div class="no-data">Run code to see performance analysis</div>
+                    </div>
+                </div>
+
+                <!-- Interview Tips -->
+                <div class="analysis-section">
+                    <h4><i class="fas fa-lightbulb"></i> Interview Tips</h4>
+                    <div id="interviewTips">
+                        <div class="no-data">Run code to get interview preparation tips</div>
+                    </div>
+                </div>
+
+                <!-- Memory Usage Chart -->
+                <div class="analysis-section">
+                    <h4><i class="fas fa-chart-area"></i> Memory Usage Over Time</h4>
+                    <canvas id="memoryChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-cog fa-spin"></i>
+            <p>Executing and analyzing your code...</p>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal" id="errorModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Execution Error</h3>
+                <button class="modal-close" id="closeError">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <pre id="errorMessage"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
