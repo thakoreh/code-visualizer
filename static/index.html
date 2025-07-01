@@ -91,6 +91,40 @@
       border-radius: 4px;
     }
 
+    /* Variable chips */
+    .var-chip {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 6px;
+      font-size: 12px;
+      background: #ffecb5;
+      border-radius: 4px;
+      border: 1px solid #ffd77e;
+      color: #6b4d00;
+      animation: fadeInOut 2.4s ease-in-out forwards;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    @keyframes fadeInOut {
+      0% {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+      10% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      90% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+    }
+
     @keyframes pulseGlow {
       0% {
         box-shadow: 0 0 0px rgba(0, 123, 255, 0.8);
@@ -127,6 +161,7 @@
     const player = document.getElementById("player");
 
     let playbackInterval;
+    let prevVars = {};
 
     runBtn.addEventListener("click", async () => {
       const code = codeInput.value;
@@ -162,26 +197,68 @@
       }
     });
 
+    function extractVars(stepData) {
+      const out = {};
+      if (!stepData.locals) return out;
+      for (const [name, meta] of Object.entries(stepData.locals)) {
+        if (meta.preview !== undefined) {
+          out[name] = meta.preview;
+        } else if (meta.value !== undefined) {
+          out[name] = meta.value;
+        } else if (meta.id && stepData.heap && stepData.heap[meta.id]) {
+          out[name] = stepData.heap[meta.id].preview;
+        }
+      }
+      return out;
+    }
+
+    function showVarChips(el, diffVars) {
+      Object.entries(diffVars).forEach(([name, value]) => {
+        const chip = document.createElement("span");
+        chip.className = "var-chip";
+        chip.textContent = `${name} = ${value}`;
+        el.appendChild(chip);
+        // Automatically remove chip from DOM after animation ends
+        chip.addEventListener("animationend", () => chip.remove());
+      });
+    }
+
     function startPlayback(trace) {
       let step = 0;
+      prevVars = {};
       if (!trace || trace.length === 0) return;
 
       playbackInterval = setInterval(() => {
-        const prevActive = document.querySelector(".active-line");
-        if (prevActive) prevActive.classList.remove("active-line");
+        // Remove previous highlight
+        const prevActiveEl = document.querySelector(".active-line");
+        if (prevActiveEl) prevActiveEl.classList.remove("active-line");
 
         if (step >= trace.length) {
           clearInterval(playbackInterval);
           return;
         }
 
-        const { line } = trace[step];
+        const stepData = trace[step];
+        const { line } = stepData;
         const el = player.querySelector(`.code-line[data-lineno='${line}']`);
         if (el) {
           el.classList.add("active-line");
-          // Smooth scroll to center
           el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+          // Compute variable diff and show chips
+          const currVars = extractVars(stepData);
+          const diff = {};
+          for (const [k, v] of Object.entries(currVars)) {
+            if (prevVars[k] !== v) {
+              diff[k] = v;
+            }
+          }
+          if (Object.keys(diff).length) {
+            showVarChips(el, diff);
+          }
+          prevVars = currVars;
         }
+
         step++;
       }, 700); // adjust speed as needed
     }

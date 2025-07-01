@@ -58,9 +58,20 @@ def get_heap_and_locals(locals_dict):
                 'type': type(v).__name__,
                 'preview': safe_repr(v)
             }
-            locals_out[str(k)] = {'type': type(v).__name__, 'id': obj_id}
+            # Store both reference id and a preview string so the frontend can show
+            # variable chips without having to cross-reference the heap table.
+            locals_out[str(k)] = {
+                'type': type(v).__name__,
+                'id': obj_id,
+                'preview': safe_repr(v)
+            }
         elif type(v) in (int, float, str, bool):
-            locals_out[str(k)] = {'type': type(v).__name__, 'value': safe_repr(v)}
+            val_repr = safe_repr(v)
+            locals_out[str(k)] = {
+                'type': type(v).__name__,
+                'value': val_repr,
+                'preview': val_repr
+            }
         # skip functions, modules, etc.
     return heap, locals_out
 
